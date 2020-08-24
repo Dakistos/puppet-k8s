@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: puppet
+  labels:
+    app: puppet
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: puppet
+  template:
+    metadata:
+      labels:
+        app: puppet
+    spec:
+      containers:
+        - name: puppet
+          image: dakistos/puppet-k8s
+          ports:
+            - containerPort: 8080

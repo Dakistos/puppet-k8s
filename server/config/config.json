@@ -1,0 +1,24 @@
+{
+  "development": {
+    "username": "agnostik",
+    "password": "Puppeteerisgood-1",
+    "database": "rdb",
+    "host": "195.154.69.121",
+    "port": "47517",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
