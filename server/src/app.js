@@ -6,6 +6,8 @@ const db = require('../models');
 
 import bodyParser from 'body-parser';
 import express from 'express';
+import {col} from "sequelize";
+import {cors} from "caniuse-lite";
 
 const app = express();
 const http = require('http').Server(app);
@@ -38,29 +40,69 @@ const main = async () => {
     cluster = await createCluster();
 };
 
-main().then(async () => {
-    app.use(bodyParser.json());
+queue.process('analyze', async (job, done) => {
+    console.log('Started background job:', job.id);
 
-    app.post('/process', async (req, res) => {
-        const {url, cmpSelector} = req.body;
+    // invoke a new pool of puppeteers
+    const cluster = await createCluster();
 
-        const collectionPath = await fetchUrls({url, cmpSelector});
-
-        // await cluster.queue(collectionPath, puppetize)
-
-        res.json({
-            success: true,
-            message: `Queued ${url} for processing!`,
-            data: {
-                numUrls: collectionPath,
-                workerId: os.hostname(),
-            },
-        });
+    job.data.url.map(async doc => {
+        await cluster.queue({doc, cmpSelector: job.data.cmpSelector}, puppetize);
     });
 
-    app.get('/', (req, res) => {
-        console.log('On change');
+    // wait for pool to be done the close them.
+    await cluster.idle();
+    await cluster.close();
+
+    console.log('Cluster done, closing.');
+
+    // TODO: Save status db.
+
+    done();
+});
+
+app.use(cors());
+app.use(bodyParser.json());
+
+app.post('/process', async (req, res) => {
+    const {url, cmpSelector} = req.body;
+
+    const collectionPath = await fetchUrls({url, cmpSelector});
+
+    const snapShot = await collectionPath.get();
+
+    const docs = snapShot.map(doc => {
+        return {
+            id: doc.id,
+            ...doc.data(),
+        }
     });
+
+    const job = queue.create('analyse', {
+        docs,
+        cmpSelector
+    }).save((err) => {
+        if (err) {
+            return res.status(400).json({
+                success: false,
+                message: `Failed to ${job.id}.`
+            })
+        }
+    });
+
+    res.json({
+        success: true,
+        message: `Queued ${url} for processing!`,
+        data: {
+            url: url,
+            workerId: os.hostname(),
+            collectionPath: collectionPath
+        },
+    });
+});
+
+app.get('/', (req, res) => {
+    console.log('On change');
 });
 
 module.exports = http;

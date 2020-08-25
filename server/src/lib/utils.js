@@ -114,40 +114,123 @@ export const fetchUrls = async (data) => {
 };
 
 export const puppetize = async ({page, data}) => {
-    console.log('Visiting url:', data.url);
+    try {
+        let cookies = [];
+        let requests = [];
 
-    await page.goto(data.url, {waitUntil: 'domcontentloaded'});
+        console.log('Visiting url:', data.url);
 
-    // // [CMP] Accept ALL
-    await page.click(
-        '#didomi-notice-agree-button',
-    );
+        console.log('Setting a Chrome DevTools Protocol session.', data.url);
 
-    console.log('Setting a Chrome DevTools Protocol session.');
+        const devtools = await page.target().createCDPSession();
 
-    const client = await page.target().createCDPSession();
+        console.log('Enabling CDP::Network');
 
-    await client.send('Network.enable');
+        await devtools.send('Network.enable');
 
-    console.log('Pending...');
+        await devtools.send('Network.setRequestInterception', {
+            patterns: [{urlPattern: '*'}],
+        });
 
-    await page.waitFor(5000);
+        devtools.on('Network.requestIntercepted', async (event) => {
+            requests = [...requests, {...event, requestId: event.requestId}];
 
-    console.log('Getting cookies for url:', data.url);
+            await devtools.send('Network.continueInterceptedRequest', {
+                interceptionId: event.interceptionId,
+            });
+        });
 
-    const cookies = (await client.send('Network.getAllCookies')).cookies;
+        devtools.on('Network.responseReceivedExtraInfo', (response) => {
+            if (response && response.headers &&
+                response.headers['set-cookie']) {
 
-    if (!cookies.length) {
-        console.log('No cookies for', data.url);
-    } else {
-        console.log('Nb cookies:', cookies.length )
+                let parsedCookies = setCookie(response.headers['set-cookie']);
+
+                parsedCookies = parsedCookies.map(cookie => {
+                    return {
+                        ...cookie,
+                        requestId: response.requestId
+                    }
+                })
+
+                cookies = [...cookies, ...parsedCookies];
+            }
+        });
+
+        await page.goto(data.url, {waitUntil: 'domcontentloaded'});
+
+        if (data.cmpSelector) {
+            console.log('CMP Detected', data.cmpSelector);
+
+            await page.waitFor(3000);
+
+            await page.click(data.cmpSelector);
+        }
+
+        console.log('Scrolling to bottom...', data.url);
+
+        await autoScroll(page);
+
+        console.log('Pending...', data.url);
+
+        await page.waitFor(3000);
+
+        console.log('Getting cookies for url:', data.url);
+
+        // collect all cookies (not shared between pages)
+        // Returns all browser cookies. Depending on the backend support, will return detailed cookie information in the cookies field.
+        // Doc: https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-getAllCookies
+        // const cookies = (await devtools.send('Network.getAllCookies')).cookies;
+
+        await db.requests.update({
+            cookies: cookies,
+            requests: requests,
+            status: 'PROCESSED',
+            workerId: os.hostname(),
+        });
+
+        console.log('Success: all set!', data.url);
+
+        await page.close();
+
+        console.log('Page closed.');
+    } catch (err) {
+        throw new Error(err.message);
     }
-
-    // await db.doc(doc.dbPath).update({
-    //   cookies: cookies,
-    //   status: 'PROCESSED',
-    //   workerId: os.hostname(),
-    // });
-
-    console.log('Success: all set!');
 };
+// export const puppetize = async ({page, data}) => {
+//     let cookies = [];
+//     let requests = [];
+//
+//     console.log('Visiting url:', data.url);
+//
+//     await page.goto(data.url, {waitUntil: 'domcontentloaded'});
+//
+//     console.log('Setting a Chrome DevTools Protocol session.');
+//
+//     const client = await page.target().createCDPSession();
+//
+//     await client.send('Network.enable');
+//
+//     console.log('Pending...');
+//
+//     await page.waitFor(5000);
+//
+//     console.log('Getting cookies for url:', data.url);
+//
+//     const cookies = (await client.send('Network.getAllCookies')).cookies;
+//
+//     if (!cookies.length) {
+//         console.log('No cookies for', data.url);
+//     } else {
+//         console.log('Nb cookies:', cookies.length )
+//     }
+//
+//     // await db.doc(doc.dbPath).update({
+//     //   cookies: cookies,
+//     //   status: 'PROCESSED',
+//     //   workerId: os.hostname(),
+//     // });
+//
+//     console.log('Success: all set!');
+// };
