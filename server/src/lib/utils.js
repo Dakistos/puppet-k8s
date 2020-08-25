@@ -68,19 +68,22 @@ export const fetchUrls = async (data) => {
 
         console.log('Creating a new crawl session for', hrefInners.length, 'urls');
 
-        const crawlsRef = await db.cookies.create({
-            domain: data.url,
-            pageUrl: "test",
-            requestUrl: "test",
-            name: os.hostname()
-        });
-
-        console.log('Crawl session created ref:', crawlsRef.id);
-
         console.log('Getting cookies for url:', data.url);
 
         const cookies = (await page._client.send('Network.getAllCookies')).cookies;
-        console.log(cookies);
+
+        console.log(cookies.length);
+
+        for( let key of Object.keys(cookies)) {
+            const crawlsRef = await db.cookies.create({
+                domain: cookies[key].domain,
+                pageUrl: cookies[key].path,
+                value: cookies[key].value,
+                name: cookies[key].name,
+                hostOs: os.hostname()
+            });
+        }
+
 
         // const batch = db.batch();
 
