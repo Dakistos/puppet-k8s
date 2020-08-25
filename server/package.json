@@ -28,6 +28,7 @@
     "puppeteer-extra-plugin-stealth": "^2.6.1",
     "sequelize": "^6.3.4",
     "sequelize-auto": "^0.5.3",
-    "sequelize-cli": "^6.2.0"
+    "sequelize-cli": "^6.2.0",
+    "set-cookie-parser": "^2.4.6"
   }
 }

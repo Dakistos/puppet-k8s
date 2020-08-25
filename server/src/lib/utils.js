@@ -1,5 +1,5 @@
 import * as os from 'os';
-
+import setCookie from 'set-cookie-parser';
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
