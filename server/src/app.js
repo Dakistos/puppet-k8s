@@ -46,9 +46,7 @@ main().then(async () => {
 
         const collectionPath = await fetchUrls({url: url});
 
-        console.log("test cluser ?");
         await cluster.queue(collectionPath, puppetize)
-        console.log("test cluser2 ?");
 
         res.json({
             success: true,

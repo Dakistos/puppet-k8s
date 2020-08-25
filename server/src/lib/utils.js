@@ -73,14 +73,7 @@ export const fetchUrls = async (data) => {
         name: os.hostname()
     });
 
-    // const crawlsRef = await db.cookies.create({
-    //   domain: 'https://varmatin.fr/',
-    //   pageUrl: "test",
-    //   requestUrl: "test",
-    //   name: "varmatin"
-    // });
-
-    console.log('Crawl session created ref:');
+    console.log('Crawl session created ref:', crawlsRef.id);
 
     // const batch = db.batch();
 
@@ -93,11 +86,11 @@ export const fetchUrls = async (data) => {
     //   });
     // });
 
-    console.log('Setting urls for the crawl session.');
+    console.log('Setting urls for the crawl session.', data.url);
 
     // await batch.commit();
 
-    console.log('Success: all set!');
+    console.log('Success: all set!', data.url);
 
     await browser.close();
 
@@ -110,9 +103,9 @@ export const puppetize = async ({page, data: doc}) => {
     await page.goto(doc.url, {waitUntil: 'domcontentloaded'});
 
     // // [CMP] Accept ALL
-    // await page.click(
-    //     '#didomi-notice-agree-button',
-    // );
+    await page.click(
+        '#didomi-notice-agree-button',
+    );
 
     console.log('Setting a Chrome DevTools Protocol session.');
 
