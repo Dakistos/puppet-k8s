@@ -79,7 +79,7 @@ export const fetchUrls = async (data) => {
 
         console.log('Getting cookies for url:', data.url);
 
-        const cookies = (await client.send('Network.getAllCookies')).cookies;
+        const cookies = (await page._client.send('Network.getAllCookies')).cookies;
         console.log(cookies);
 
         // const batch = db.batch();
