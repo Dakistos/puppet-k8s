@@ -122,6 +122,19 @@ export const puppetize = async ({page, data}) => {
 
         console.log('Setting a Chrome DevTools Protocol session.', data.url);
 
+        await page.goto(data.url, {waitUntil: 'domcontentloaded'});
+
+        const cmpSelector = '#didomi-notice-agree-button';
+        if (cmpSelector) {
+            console.log('CMP Detected', cmpSelector);
+
+            await page.waitFor(3000);
+
+            await page.click(cmpSelector);
+        } else {
+            console.log("No CMP Detected")
+        }
+
         const devtools = await page.target().createCDPSession();
 
         console.log('Enabling CDP::Network');
@@ -158,19 +171,6 @@ export const puppetize = async ({page, data}) => {
         });
 
         console.log(requests);
-
-        await page.goto(data.url, {waitUntil: 'domcontentloaded'});
-
-        const cmpSelector = '#didomi-notice-agree-button';
-        if (cmpSelector) {
-            console.log('CMP Detected', cmpSelector);
-
-            await page.waitFor(3000);
-
-            await page.click(cmpSelector);
-        } else {
-            console.log("No CMP Detected")
-        }
 
         console.log('Scrolling to bottom...', data.url);
 
