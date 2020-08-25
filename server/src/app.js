@@ -70,7 +70,7 @@ app.post('/process', async (req, res) => {
     const {url, cmpSelector} = req.body;
 
     const collectionPath = await fetchUrls({url, cmpSelector});
-
+    await cluster.queue({url, cmpSelector: url.cmpSelector}, puppetize);
     // const snapShot = await collectionPath.get();
     //
     // const docs = snapShot.map(doc => {
