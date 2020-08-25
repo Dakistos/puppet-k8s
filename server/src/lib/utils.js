@@ -176,18 +176,18 @@ export const puppetize = async ({page, data}) => {
         await page.waitFor(3000);
 
         console.log('Getting cookies for url:', data.url);
-
+        console.log(requests);
         // collect all cookies (not shared between pages)
         // Returns all browser cookies. Depending on the backend support, will return detailed cookie information in the cookies field.
         // Doc: https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-getAllCookies
         // const cookies = (await devtools.send('Network.getAllCookies')).cookies;
 
-        await db.requests.update({
-            cookies: cookies,
-            requests: requests,
-            status: 'PROCESSED',
-            workerId: os.hostname(),
-        });
+        // await db.requests.update({
+        //     cookies: cookies,
+        //     requests: requests,
+        //     status: 'PROCESSED',
+        //     workerId: os.hostname(),
+        // });
 
         console.log('Success: all set!', data.url);
 
