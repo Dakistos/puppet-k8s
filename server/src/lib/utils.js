@@ -72,14 +72,13 @@ export const fetchUrls = async (data) => {
 
         const cookies = (await page._client.send('Network.getAllCookies')).cookies;
 
-        console.log('Nb cookies for', data.url, ":", cookies.length);
-
-        const crawlsRef = await db.cookies
+        const crawlsRef = await db.cookies;
 
         for( let key of Object.keys(cookies)) {
             crawlsRef.create({
                 domain: cookies[key].domain,
                 pageUrl: cookies[key].path,
+                requestUrl: data.url,
                 value: cookies[key].value,
                 name: cookies[key].name,
                 hostOs: os.hostname()
@@ -87,7 +86,7 @@ export const fetchUrls = async (data) => {
         }
 
         console.log(cookies)
-
+        console.log('Nb cookies for', data.url, ":", cookies.length);
 
         // const batch = db.batch();
 

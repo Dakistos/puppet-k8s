@@ -6,8 +6,16 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    date: {
-      type: DataTypes.DATEONLY,
+    name: {
+      type: DataTypes.STRING(45),
+      allowNull: true
+    },
+    value: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    hostOs: {
+      type: DataTypes.STRING(255),
       allowNull: true
     },
     pageUrl: {
@@ -16,10 +24,6 @@ module.exports = function(sequelize, DataTypes) {
     },
     requestUrl: {
       type: DataTypes.TEXT,
-      allowNull: true
-    },
-    name: {
-      type: DataTypes.STRING(255),
       allowNull: true
     },
     id: {
