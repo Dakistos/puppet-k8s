@@ -151,7 +151,7 @@ export const puppetize = async ({page, data}) => {
                         ...cookie,
                         requestId: response.requestId
                     }
-                })
+                });
 
                 cookies = [...cookies, ...parsedCookies];
             }

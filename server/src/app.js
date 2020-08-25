@@ -7,7 +7,10 @@ const db = require('../models');
 import bodyParser from 'body-parser';
 import express from 'express';
 import {col} from "sequelize";
-import {cors} from "caniuse-lite";
+import {cors} from "cors";
+import kue from 'kue';
+
+const queue = kue.createQueue();
 
 const app = express();
 const http = require('http').Server(app);
