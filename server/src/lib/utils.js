@@ -31,76 +31,86 @@ const autoScroll = async (page) => {
  * @param data
  */
 export const fetchUrls = async (data) => {
-    console.log('Launching a new browser instance.');
+    try {
 
-    const browser = await puppeteer.launch({
-        headless: true,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-        ],
-    });
+        console.log('Launching a new browser instance.');
 
-    console.log('Opening a new page.');
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+            ],
+        });
 
-    const page = await browser.newPage();
+        console.log('Opening a new page.');
 
+        const page = await browser.newPage();
+
+        console.log('Visiting url:', data.url);
+
+        await page.goto(data.url, {waitUntil: 'domcontentloaded'});
+
+        console.log('Getting all links from url:', data.url);
+
+        const hrefs = await page.$$eval('a',
+            as => as.map(a => a.href));
+
+        console.log('Filtering unique inner links');
+
+        const hrefInners = [...new Set(hrefs.filter(x => x.startsWith(data.url)))];
+
+        if (!hrefInners.length) {
+            console.info('No urls found. Exiting process.');
+
+            await browser.close();
+        }
+
+        console.log('Creating a new crawl session for', hrefInners.length, 'urls');
+
+        const crawlsRef = await db.cookies.create({
+            domain: data.url,
+            pageUrl: "test",
+            requestUrl: "test",
+            name: os.hostname()
+        });
+
+        console.log('Crawl session created ref:', crawlsRef.id);
+
+        console.log('Getting cookies for url:', data.url);
+
+        const cookies = (await client.send('Network.getAllCookies')).cookies;
+        console.log(cookies);
+
+        // const batch = db.batch();
+
+        // hrefInners.forEach(link => {
+        //   const urlRef = crawlsRef.collection('urls').doc();
+        //
+        //   batch.set(urlRef, {
+        //     url: link,
+        //     status: 'PENDING',
+        //   });
+        // });
+
+        console.log('Setting urls for the crawl session.', data.url);
+
+        // await batch.commit();
+
+        console.log('Success: all set!', data.url);
+
+        await browser.close();
+
+        return `crawls/${crawlsRef.id}/urls`;
+    } catch (e) {
+        throw new Error(e.message)
+    }
+};
+
+export const puppetize = async ({page, data}) => {
     console.log('Visiting url:', data.url);
 
     await page.goto(data.url, {waitUntil: 'domcontentloaded'});
-
-    console.log('Getting all links from url:', data.url);
-
-    const hrefs = await page.$$eval('a',
-        as => as.map(a => a.href));
-
-    console.log('Filtering unique inner links');
-
-    const hrefInners = [...new Set(hrefs.filter(x => x.startsWith(data.url)))];
-
-    if (!hrefInners.length) {
-        console.info('No urls found. Exiting process.');
-
-        await browser.close();
-    }
-
-    console.log('Creating a new crawl session for', hrefInners.length, 'urls');
-
-    const crawlsRef =  await db.cookies.create({
-        domain: data.url,
-        pageUrl: "test",
-        requestUrl: "test",
-        name: os.hostname()
-    });
-
-    console.log('Crawl session created ref:', crawlsRef.id);
-
-    // const batch = db.batch();
-
-    // hrefInners.forEach(link => {
-    //   const urlRef = crawlsRef.collection('urls').doc();
-    //
-    //   batch.set(urlRef, {
-    //     url: link,
-    //     status: 'PENDING',
-    //   });
-    // });
-
-    console.log('Setting urls for the crawl session.', data.url);
-
-    // await batch.commit();
-
-    console.log('Success: all set!', data.url);
-
-    await browser.close();
-
-    return `crawls/${crawlsRef.id}/urls`;
-};
-
-export const puppetize = async ({page, data: doc}) => {
-    console.log('Visiting url:', doc.url);
-
-    await page.goto(doc.url, {waitUntil: 'domcontentloaded'});
 
     // // [CMP] Accept ALL
     await page.click(
@@ -117,12 +127,12 @@ export const puppetize = async ({page, data: doc}) => {
 
     await page.waitFor(5000);
 
-    console.log('Getting cookies for url:', doc.url);
+    console.log('Getting cookies for url:', data.url);
 
     const cookies = (await client.send('Network.getAllCookies')).cookies;
 
     if (!cookies.length) {
-        console.log('No cookies for', doc.url);
+        console.log('No cookies for', data.url);
     } else {
         console.log('Nb cookies:', cookies.length )
     }

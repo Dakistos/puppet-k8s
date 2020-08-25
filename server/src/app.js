@@ -42,11 +42,11 @@ main().then(async () => {
     app.use(bodyParser.json());
 
     app.post('/process', async (req, res) => {
-        const {url} = req.body;
+        const {url, cmpSelector} = req.body;
 
-        const collectionPath = await fetchUrls({url: url});
+        const collectionPath = await fetchUrls({url, cmpSelector});
 
-        await cluster.queue(collectionPath, puppetize(collectionPath))
+        // await cluster.queue(collectionPath, puppetize)
 
         res.json({
             success: true,
