@@ -69,28 +69,9 @@ app.use(bodyParser.json());
 app.post('/process', async (req, res) => {
     const {url, cmpSelector} = req.body;
 
+    cluster = await createCluster();
     const collectionPath = await fetchUrls({url, cmpSelector});
     await cluster.queue({url, cmpSelector: url.cmpSelector}, puppetize);
-    // const snapShot = await collectionPath.get();
-    //
-    // const docs = snapShot.map(doc => {
-    //     return {
-    //         id: doc.id,
-    //         ...doc.data(),
-    //     }
-    // });
-    //
-    // const job = queue.create('analyse', {
-    //     docs,
-    //     cmpSelector
-    // }).save((err) => {
-    //     if (err) {
-    //         return res.status(400).json({
-    //             success: false,
-    //             message: `Failed to ${job.id}.`
-    //         })
-    //     }
-    // });
 
     res.json({
         success: true,
