@@ -123,6 +123,8 @@ export const puppetize = async ({page, data: doc}) => {
 
     if (!cookies.length) {
         console.log('No cookies for', doc.url);
+    } else {
+        console.log('Nb cookies:', cookies.length )
     }
 
     // await db.doc(doc.dbPath).update({

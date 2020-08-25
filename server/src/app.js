@@ -46,7 +46,7 @@ main().then(async () => {
 
         const collectionPath = await fetchUrls({url: url});
 
-        await cluster.queue(collectionPath, puppetize)
+        await cluster.queue(collectionPath, puppetize(collectionPath))
 
         res.json({
             success: true,
