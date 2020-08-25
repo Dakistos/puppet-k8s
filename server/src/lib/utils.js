@@ -159,7 +159,7 @@ export const puppetize = async ({page, data}) => {
 
         await page.goto(data.url, {waitUntil: 'domcontentloaded'});
 
-        const cmpSelector = await page.$('#didomi-notice-agree-button');
+        const cmpSelector = '#didomi-notice-agree-button';
         if (cmpSelector) {
             console.log('CMP Detected', cmpSelector);
 
