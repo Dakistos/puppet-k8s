@@ -159,12 +159,15 @@ export const puppetize = async ({page, data}) => {
 
         await page.goto(data.url, {waitUntil: 'domcontentloaded'});
 
-        if (data.cmpSelector) {
-            console.log('CMP Detected', data.cmpSelector);
+        const cmpSelector = await page.$('#didomi-notice-agree-button');
+        if (cmpSelector) {
+            console.log('CMP Detected', cmpSelector);
 
             await page.waitFor(3000);
 
-            await page.click(data.cmpSelector);
+            await page.click(cmpSelector);
+        } else {
+            console.log("No CMP Detected")
         }
 
         console.log('Scrolling to bottom...', data.url);

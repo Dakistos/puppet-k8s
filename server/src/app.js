@@ -71,7 +71,7 @@ app.post('/process', async (req, res) => {
 
     cluster = await createCluster();
     const collectionPath = await fetchUrls({url, cmpSelector});
-    await cluster.queue({url, cmpSelector: url.cmpSelector}, puppetize);
+    await cluster.queue({url, cmpSelector: cmpSelector}, puppetize);
 
     res.json({
         success: true,
