@@ -7,10 +7,10 @@ const db = require('../models');
 import bodyParser from 'body-parser';
 import express from 'express';
 import {col} from "sequelize";
-import {cors} from "cors";
-import kue from 'kue';
-
-const queue = kue.createQueue();
+// import {cors} from "cors";
+// import kue from 'kue';
+//
+// const queue = kue.createQueue();
 
 const app = express();
 const http = require('http').Server(app);
@@ -43,55 +43,54 @@ const main = async () => {
     cluster = await createCluster();
 };
 
-queue.process('analyze', async (job, done) => {
-    console.log('Started background job:', job.id);
+// queue.process('analyze', async (job, done) => {
+//     console.log('Started background job:', job.id);
+//
+//     // invoke a new pool of puppeteers
+//     const cluster = await createCluster();
+//
+//     job.data.url.map(async doc => {
+//         await cluster.queue({doc, cmpSelector: job.data.cmpSelector}, puppetize);
+//     });
+//
+//     // wait for pool to be done the close them.
+//     await cluster.idle();
+//     await cluster.close();
+//
+//     console.log('Cluster done, closing.');
+//
+//     done();
+// });
 
-    // invoke a new pool of puppeteers
-    const cluster = await createCluster();
-
-    job.data.url.map(async doc => {
-        await cluster.queue({doc, cmpSelector: job.data.cmpSelector}, puppetize);
-    });
-
-    // wait for pool to be done the close them.
-    await cluster.idle();
-    await cluster.close();
-
-    console.log('Cluster done, closing.');
-
-    // TODO: Save status db.
-
-    done();
-});
-
-app.use(cors());
+// app.use(cors());
 app.use(bodyParser.json());
+// app.use('kue-ui', kue.app);
 
 app.post('/process', async (req, res) => {
     const {url, cmpSelector} = req.body;
 
     const collectionPath = await fetchUrls({url, cmpSelector});
 
-    const snapShot = await collectionPath.get();
-
-    const docs = snapShot.map(doc => {
-        return {
-            id: doc.id,
-            ...doc.data(),
-        }
-    });
-
-    const job = queue.create('analyse', {
-        docs,
-        cmpSelector
-    }).save((err) => {
-        if (err) {
-            return res.status(400).json({
-                success: false,
-                message: `Failed to ${job.id}.`
-            })
-        }
-    });
+    // const snapShot = await collectionPath.get();
+    //
+    // const docs = snapShot.map(doc => {
+    //     return {
+    //         id: doc.id,
+    //         ...doc.data(),
+    //     }
+    // });
+    //
+    // const job = queue.create('analyse', {
+    //     docs,
+    //     cmpSelector
+    // }).save((err) => {
+    //     if (err) {
+    //         return res.status(400).json({
+    //             success: false,
+    //             message: `Failed to ${job.id}.`
+    //         })
+    //     }
+    // });
 
     res.json({
         success: true,
