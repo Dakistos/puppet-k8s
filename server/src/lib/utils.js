@@ -135,6 +135,9 @@ export const puppetize = async ({page, data}) => {
             console.log("No CMP Detected")
         }
 
+        console.log(autoScroll(page));
+        await autoScroll(page);
+
         const devtools = await page.target().createCDPSession();
 
         console.log('Enabling CDP::Network');
@@ -173,8 +176,7 @@ export const puppetize = async ({page, data}) => {
         console.log(requests);
 
         console.log('Scrolling to bottom...', data.url);
-        console.log(page)
-        await autoScroll(page);
+
         console.log('Pending...', data.url);
 
         await page.waitFor(3000);
