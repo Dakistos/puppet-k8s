@@ -82,7 +82,7 @@ export const fetchUrls = async (data) => {
             });
         }
 
-        console.log(cookies)
+        // console.log(cookies)
         console.log('Nb cookies for', data.url, ":", cookies.length);
 
         // const batch = db.batch();
@@ -169,6 +169,7 @@ export const puppetize = async ({page, data}) => {
             }
         });
 
+        console.log(cookies);
         console.log(requests);
 
         console.log('Scrolling to bottom...', data.url);
