@@ -134,8 +134,7 @@ export const puppetize = async ({page, data}) => {
         } else {
             console.log("No CMP Detected")
         }
-
-        console.log(autoScroll(page));
+        
         await autoScroll(page);
 
         const devtools = await page.target().createCDPSession();
