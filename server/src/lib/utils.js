@@ -7,22 +7,19 @@ puppeteer.use(StealthPlugin());
 const db = require('../../models');
 
 const autoScroll = async (page) => {
-    await page.evaluate(async () => {
-        await new Promise((resolve, reject) => {
-            let totalHeight = 0;
-            let distance = 100;
-            let timer = setInterval(() => {
-                let scrollHeight = document.body.scrollHeight;
-                window.scrollBy(0, distance);
-                totalHeight += distance;
+    await page.evaluate(() => new Promise((resolve) => {
+        let scrollTop = -1;
+        const interval = setInterval(() => {
+            window.scrollBy(0, 100);
+            if (document.documentElement.scrollTop !== scrollTop) {
+                scrollTop = document.documentElement.scrollTop;
 
-                if (totalHeight >= scrollHeight) {
-                    clearInterval(timer);
-                    resolve();
-                }
-            }, 30);
-        });
-    });
+                return;
+            }
+            clearInterval(interval);
+            resolve();
+        }, 100);
+    }));
 };
 
 /**
@@ -134,7 +131,7 @@ export const puppetize = async ({page, data}) => {
         } else {
             console.log("No CMP Detected")
         }
-        
+
         await autoScroll(page);
 
         const devtools = await page.target().createCDPSession();
