@@ -67,11 +67,11 @@ app.use(bodyParser.json());
 // app.use('kue-ui', kue.app);
 
 app.post('/process', async (req, res) => {
-    const {url, cmpSelector} = req.body;
+    const {url} = req.body;
 
     cluster = await createCluster();
-    const collectionPath = await fetchUrls({url, cmpSelector});
-    await cluster.queue({url, cmpSelector: cmpSelector}, puppetize);
+    const collectionPath = await fetchUrls({url});
+    await cluster.queue({url}, puppetize);
 
     res.json({
         success: true,

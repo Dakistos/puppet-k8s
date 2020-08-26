@@ -119,21 +119,6 @@ export const puppetize = async ({page, data}) => {
 
         console.log('Setting a Chrome DevTools Protocol session.', data.url);
 
-        await page.goto(data.url, {waitUntil: 'domcontentloaded'});
-
-        const cmpSelector = '#didomi-notice-agree-button';
-        if (cmpSelector) {
-            console.log('CMP Detected', cmpSelector);
-
-            await page.waitFor(3000);
-
-            await page.click(cmpSelector);
-        } else {
-            console.log("No CMP Detected")
-        }
-
-        await autoScroll(page);
-
         const devtools = await page.target().createCDPSession();
 
         console.log('Enabling CDP::Network');
@@ -169,16 +154,31 @@ export const puppetize = async ({page, data}) => {
             }
         });
 
-        console.log(cookies);
-        console.log(requests);
+        await page.goto(data.url, {waitUntil: 'domcontentloaded'});
+
+        const cmpSelector = '#didomi-notice-agree-button';
+        if (cmpSelector) {
+            console.log('CMP Detected', cmpSelector);
+
+            await page.waitFor(3000);
+
+            await page.click(cmpSelector);
+        } else {
+            console.log("No CMP Detected")
+        }
 
         console.log('Scrolling to bottom...', data.url);
+
+        await autoScroll(page);
 
         console.log('Pending...', data.url);
 
         await page.waitFor(3000);
 
         console.log('Getting cookies for url:', data.url);
+
+        console.log(cookies);
+        console.log(requests);
         // collect all cookies (not shared between pages)
         // Returns all browser cookies. Depending on the backend support, will return detailed cookie information in the cookies field.
         // Doc: https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-getAllCookies
