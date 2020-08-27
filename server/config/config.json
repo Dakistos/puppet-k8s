@@ -5,7 +5,8 @@
     "database": "rdb",
     "host": "195.154.69.121",
     "port": "47517",
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "logging": false
   },
   "test": {
     "username": "root",

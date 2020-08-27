@@ -1,5 +1,6 @@
 import * as os from 'os';
 import setCookie from 'set-cookie-parser';
+
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
@@ -65,36 +66,28 @@ export const fetchUrls = async (data) => {
 
         console.log('Creating a new crawl session for', hrefInners.length, 'urls');
 
-        console.log('Getting cookies for url:', data.url);
+        const crawlsRef = await db.websitesurl;
+        let existedUrls;
 
-        const cookies = (await page._client.send('Network.getAllCookies')).cookies;
-
-        const crawlsRef = await db.cookies;
-
-        for( let key of Object.keys(cookies)) {
-            crawlsRef.create({
-                domain: cookies[key].domain,
-                pageUrl: cookies[key].path,
-                requestUrl: data.url,
-                value: cookies[key].value,
-                name: cookies[key].name,
-                hostOs: os.hostname()
+        for (const el of hrefInners) {
+            const dbUrls = await crawlsRef.findAll({
+                where: {
+                    url: el
+                },
+                attributes: ['url']
             });
+            const stringUrls = JSON.stringify(dbUrls);
+            existedUrls = JSON.parse(stringUrls);
+
+            if (existedUrls[0]) {
+                // console.log(existedUrls[0].url);
+            } else {
+                crawlsRef.create({
+                    sourceUrl: data.url,
+                    url: el
+                });
+            }
         }
-
-        // console.log(cookies)
-        console.log('Nb cookies for', data.url, ":", cookies.length);
-
-        // const batch = db.batch();
-
-        // hrefInners.forEach(link => {
-        //   const urlRef = crawlsRef.collection('urls').doc();
-        //
-        //   batch.set(urlRef, {
-        //     url: link,
-        //     status: 'PENDING',
-        //   });
-        // });
 
         console.log('Setting urls for the crawl session.', data.url);
 
@@ -104,7 +97,7 @@ export const fetchUrls = async (data) => {
 
         await browser.close();
 
-        return `crawls/${crawlsRef.id}/urls`;
+        return existedUrls;
     } catch (e) {
         throw new Error(e.message)
     }
@@ -157,6 +150,7 @@ export const puppetize = async ({page, data}) => {
         await page.goto(data.url, {waitUntil: 'domcontentloaded'});
 
         const cmpSelector = '#didomi-notice-agree-button';
+        // const figaroCMP = "body > div > div > article > div > aside > section:nth-child(1) > button";
         if (cmpSelector) {
             console.log('CMP Detected', cmpSelector);
 
@@ -175,10 +169,39 @@ export const puppetize = async ({page, data}) => {
 
         await page.waitFor(3000);
 
+        console.log('Getting requests for url:', data.url);
+
+        const crawlsRequests = await db.requests;
+        console.log(requests);
+        for (let key of Object.keys(requests)) {
+            crawlsRequests.create({
+                interceptionId: requests[key].interceptionId,
+                url: requests[key].request.url,
+                pageUrl: data.url,
+                initialPriority: requests[key].request.initialPriority,
+                requestId: requests[key].requestId,
+                // hostOs: os.hostname()
+            });
+        }
+
         console.log('Getting cookies for url:', data.url);
 
+        const crawlsCookies = await db.cookies;
         console.log(cookies);
-        console.log(requests);
+        for (let key of Object.keys(cookies)) {
+            crawlsCookies.create({
+                domain: cookies[key].domain,
+                requestUrl: data.url,
+                expires: cookies[key].expires,
+                pageUrl: cookies[key].path,
+                name: cookies[key].name,
+                value: cookies[key].value,
+                secure: cookies[key].secure,
+                sameSite: cookies[key].sameSite,
+                requestId: cookies[key].requestId,
+                hostOs: os.hostname()
+            });
+        }
         // collect all cookies (not shared between pages)
         // Returns all browser cookies. Depending on the backend support, will return detailed cookie information in the cookies field.
         // Doc: https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-getAllCookies
@@ -200,39 +223,3 @@ export const puppetize = async ({page, data}) => {
         throw new Error(err.message);
     }
 };
-// export const puppetize = async ({page, data}) => {
-//     let cookies = [];
-//     let requests = [];
-//
-//     console.log('Visiting url:', data.url);
-//
-//     await page.goto(data.url, {waitUntil: 'domcontentloaded'});
-//
-//     console.log('Setting a Chrome DevTools Protocol session.');
-//
-//     const client = await page.target().createCDPSession();
-//
-//     await client.send('Network.enable');
-//
-//     console.log('Pending...');
-//
-//     await page.waitFor(5000);
-//
-//     console.log('Getting cookies for url:', data.url);
-//
-//     const cookies = (await client.send('Network.getAllCookies')).cookies;
-//
-//     if (!cookies.length) {
-//         console.log('No cookies for', data.url);
-//     } else {
-//         console.log('Nb cookies:', cookies.length )
-//     }
-//
-//     // await db.doc(doc.dbPath).update({
-//     //   cookies: cookies,
-//     //   status: 'PROCESSED',
-//     //   workerId: os.hostname(),
-//     // });
-//
-//     console.log('Success: all set!');
-// };
