@@ -16,7 +16,6 @@ const {Cluster} = require('puppeteer-cluster');
 
 let cluster;
 
-
 async function createCluster() {
     return await Cluster.launch({
         concurrency: Cluster.CONCURRENCY_CONTEXT,
@@ -43,27 +42,30 @@ app.use(bodyParser.json());
 
 app.post('/process', async (req, res) => {
     const {url} = req.body;
+    let analysedUrls = 0;
 
     cluster = await createCluster();
     const collectionPath = await fetchUrls({url});
 
-    // const crawlsRef = await db.websitesurl;
-    // const dbUrls = await crawlsRef.findAll({
-    //     where: {
-    //         sourceUrl: url
-    //     },
-    //     attributes: ['url']
-    // });
+    const crawlsRef = await db.websitesurl;
+    const dbUrls = await crawlsRef.findAll({
+        where: {
+            sourceUrl: url
+        },
+        attributes: ['url']
+    });
     console.log(collectionPath[0].url);
-    const test = collectionPath[0].url;
-    // const stringUrls = JSON.stringify(dbUrls);
-    // const existedUrls = JSON.parse(stringUrls);
-    await cluster.queue({test}, puppetize);
-    // existedUrls.map(async el => {
-    //     let url = el.url;
-    //     console.log(url);
-    //     await cluster.queue({url}, puppetize);
-    // });
+    const stringUrls = JSON.stringify(dbUrls);
+    const existedUrls = JSON.parse(stringUrls);
+    console.log(existedUrls);
+    // await cluster.queue({url: existedUrls.url}, puppetize);
+    existedUrls.map(async el => {
+        // let url = el.url;
+        // console.log(el.url);
+        await cluster.queue({url: el.url}, puppetize);
+        analysedUrls = analysedUrls += 1;
+        console.log("Urls analysées :", analysedUrls);
+    });
     // console.log(existedUrls);
     await cluster.idle();
     await cluster.close();

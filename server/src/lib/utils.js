@@ -1,5 +1,6 @@
 import * as os from 'os';
 import setCookie from 'set-cookie-parser';
+import {launch} from "puppeteer";
 
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
@@ -23,6 +24,17 @@ const autoScroll = async (page) => {
     }));
 };
 
+const launchBrowser = async (browser) => {
+    browser = await puppeteer.launch({
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+        ],
+    });
+    return browser;
+};
+
 /**
  * Fetch all unique inner (same domain) urls
  * within a targeted website.
@@ -33,13 +45,7 @@ export const fetchUrls = async (data) => {
 
         console.log('Launching a new browser instance.');
 
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-            ],
-        });
+        const browser = await launchBrowser(browser);
 
         console.log('Opening a new page.');
 
@@ -56,7 +62,9 @@ export const fetchUrls = async (data) => {
 
         console.log('Filtering unique inner links');
 
-        const hrefInners = [...new Set(hrefs.filter(x => x.startsWith(data.url)))];
+        const hrefInners = [
+            ...new Set(hrefs.filter(x => x.startsWith(data.url))
+        )].filter(value => !value.includes('#'));
 
         if (!hrefInners.length) {
             console.info('No urls found. Exiting process.');
@@ -65,11 +73,38 @@ export const fetchUrls = async (data) => {
         }
 
         console.log('Creating a new crawl session for', hrefInners.length, 'urls');
+        let uniqueValues;
 
         const crawlsRef = await db.websitesurl;
         let existedUrls;
 
-        for (const el of hrefInners) {
+        // Search more urls
+        for (let i = 0; i < 10; i++) {
+            // Select random url in base array
+            let rand = hrefInners[Math.floor(Math.random() * hrefInners.length)];
+
+            console.log("Crawling session for : ", rand);
+
+            await page.goto(rand, {waitUntil: 'domcontentloaded'});
+            const pages = await page.$$eval('a', as => as.map(a => a.href));
+
+            // Filter unique links and delete urls with "#"
+            const filteredPages = [...new Set(
+                pages.filter(x => x.startsWith(data.url))
+            )].filter(value => !value.includes('#'));
+
+            // Push new Urls in base array
+            hrefInners.push.apply(hrefInners, filteredPages);
+            uniqueValues = [...new Set(hrefInners)];
+
+            console.log("Base Urls :", hrefInners.length);
+            console.log("Unique Urls :", uniqueValues.length);
+        }
+        // console.log(uniqueValues);
+
+        console.log('Setting urls for the crawl session.', data.url);
+
+        for (const el of uniqueValues) {
             const dbUrls = await crawlsRef.findAll({
                 where: {
                     url: el
@@ -79,9 +114,7 @@ export const fetchUrls = async (data) => {
             const stringUrls = JSON.stringify(dbUrls);
             existedUrls = JSON.parse(stringUrls);
 
-            if (existedUrls[0]) {
-                // console.log(existedUrls[0].url);
-            } else {
+            if (!existedUrls[0]) {
                 crawlsRef.create({
                     sourceUrl: data.url,
                     url: el
@@ -89,14 +122,10 @@ export const fetchUrls = async (data) => {
             }
         }
 
-        console.log('Setting urls for the crawl session.', data.url);
-
-        // await batch.commit();
-
         console.log('Success: all set!', data.url);
 
         await browser.close();
-
+        // console.log(existedUrls);
         return existedUrls;
     } catch (e) {
         throw new Error(e.message)
@@ -150,6 +179,7 @@ export const puppetize = async ({page, data}) => {
         await page.goto(data.url, {waitUntil: 'domcontentloaded'});
 
         const cmpSelector = '#didomi-notice-agree-button';
+        // const cmpSelector = '#cookieConsentAcceptButton';
         // const figaroCMP = "body > div > div > article > div > aside > section:nth-child(1) > button";
         if (cmpSelector) {
             console.log('CMP Detected', cmpSelector);
@@ -172,7 +202,7 @@ export const puppetize = async ({page, data}) => {
         console.log('Getting requests for url:', data.url);
 
         const crawlsRequests = await db.requests;
-        console.log(requests);
+        // console.log(requests);
         for (let key of Object.keys(requests)) {
             crawlsRequests.create({
                 interceptionId: requests[key].interceptionId,
@@ -183,11 +213,12 @@ export const puppetize = async ({page, data}) => {
                 // hostOs: os.hostname()
             });
         }
+        console.log("Requests detected :", requests.length);
 
         console.log('Getting cookies for url:', data.url);
 
         const crawlsCookies = await db.cookies;
-        console.log(cookies);
+        // console.log(cookies);
         for (let key of Object.keys(cookies)) {
             crawlsCookies.create({
                 domain: cookies[key].domain,
@@ -202,6 +233,7 @@ export const puppetize = async ({page, data}) => {
                 hostOs: os.hostname()
             });
         }
+        console.log("Cookies detected :", cookies.length);
         // collect all cookies (not shared between pages)
         // Returns all browser cookies. Depending on the backend support, will return detailed cookie information in the cookies field.
         // Doc: https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-getAllCookies
