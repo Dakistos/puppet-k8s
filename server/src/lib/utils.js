@@ -64,7 +64,7 @@ export const fetchUrls = async (data) => {
 
         const hrefInners = [
             ...new Set(hrefs.filter(x => x.startsWith(data.url))
-        )].filter(value => !value.includes('#'));
+            )].filter(value => !value.includes('#'));
 
         if (!hrefInners.length) {
             console.info('No urls found. Exiting process.');

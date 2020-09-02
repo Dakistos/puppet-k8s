@@ -6,6 +6,8 @@ import express from 'express';
 const db = require('../models');
 const app = express();
 const http = require('http').Server(app);
+// const kue = require('kue');
+
 
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
@@ -18,12 +20,13 @@ let cluster;
 
 async function createCluster() {
     return await Cluster.launch({
-        concurrency: Cluster.CONCURRENCY_CONTEXT,
+        concurrency: Cluster.CONCURRENCY_PAGE,
         maxConcurrency: 3,
-        sameDomainDelay: 3, // data should be an url or an object containing the "url" field.
+        sameDomainDelay: 3000, // data should be an url or an object containing the "url" field.
         // puppeteer: puppeteer,
+        monitor: false,
         puppeteerOptions: {
-            headless: true,
+            headless: false,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -47,6 +50,7 @@ app.post('/process', async (req, res) => {
     cluster = await createCluster();
     const collectionPath = await fetchUrls({url});
 
+    // Get previous stored Urls
     const crawlsRef = await db.websitesurl;
     const dbUrls = await crawlsRef.findAll({
         where: {
@@ -54,19 +58,17 @@ app.post('/process', async (req, res) => {
         },
         attributes: ['url']
     });
-    console.log(collectionPath[0].url);
     const stringUrls = JSON.stringify(dbUrls);
     const existedUrls = JSON.parse(stringUrls);
-    console.log(existedUrls);
-    // await cluster.queue({url: existedUrls.url}, puppetize);
+
+    // Loop though urls
     existedUrls.map(async el => {
-        // let url = el.url;
-        // console.log(el.url);
+        console.log(el.url);
         await cluster.queue({url: el.url}, puppetize);
         analysedUrls = analysedUrls += 1;
         console.log("Urls analysées :", analysedUrls);
     });
-    // console.log(existedUrls);
+
     await cluster.idle();
     await cluster.close();
 
