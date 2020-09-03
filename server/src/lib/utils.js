@@ -180,7 +180,7 @@ export const puppetize = async ({page, data}) => {
 
         const cmpSelector = '#didomi-notice-agree-button';
         // const cmpSelector = '#cookieConsentAcceptButton';
-        // const figaroCMP = "body > div > div > article > div > aside > section:nth-child(1) > button";
+        // const cmpSelector = "body > div > div > article > div > aside > section:nth-child(1) > button";
         if (cmpSelector) {
             console.log('CMP Detected', cmpSelector);
 

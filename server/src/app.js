@@ -9,8 +9,8 @@ const http = require('http').Server(app);
 // const kue = require('kue');
 
 
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+// const puppeteer = require('puppeteer-extra');
+// const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 
 // puppeteer.use(StealthPlugin());
 
@@ -19,12 +19,12 @@ const {Cluster} = require('puppeteer-cluster');
 let cluster;
 
 async function createCluster() {
-    return await Cluster.launch({
+    const cluster =  await Cluster.launch({
         concurrency: Cluster.CONCURRENCY_PAGE,
         maxConcurrency: 3,
         sameDomainDelay: 3000, // data should be an url or an object containing the "url" field.
         // puppeteer: puppeteer,
-        monitor: false,
+        monitor: true,
         puppeteerOptions: {
             headless: false,
             args: [
@@ -34,11 +34,23 @@ async function createCluster() {
             defaultViewport: null
         },
     });
+
+    // Event listener on task error.
+    cluster.on('taskerror', (err, data, willRetry) => {
+        if (willRetry) {
+            console.warn(
+                `Encountered an error while crawling ${data.doc.url}. ${err.message} [-] This job will be retried`);
+        } else {
+            console.error(`Failed to crawl ${data.doc.url}: ${err.message}`);
+        }
+    });
+
+    return cluster;
 }
 
-const main = async () => {
-    cluster = await createCluster();
-};
+// const main = async () => {
+//     cluster = await createCluster();
+// };
 
 // app.use(cors());
 app.use(bodyParser.json());
