@@ -77,8 +77,6 @@ app.post('/process', async (req, res) => {
     existedUrls.map(async el => {
         console.log(el.url);
         await cluster.queue({url: el.url}, puppetize);
-        analysedUrls = analysedUrls += 1;
-        console.log("Urls analysées :", analysedUrls);
     });
 
     await cluster.idle();

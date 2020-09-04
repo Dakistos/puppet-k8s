@@ -80,7 +80,7 @@ export const fetchUrls = async (data) => {
 
         // Search more urls
         for (let i = 0; i < 10; i++) {
-            // Select random url in base array
+            // Select random url in initial array
             let rand = hrefInners[Math.floor(Math.random() * hrefInners.length)];
 
             console.log("Crawling session for : ", rand);
@@ -93,7 +93,7 @@ export const fetchUrls = async (data) => {
                 pages.filter(x => x.startsWith(data.url))
             )].filter(value => !value.includes('#'));
 
-            // Push new Urls in base array
+            // Push new Urls in initial array
             hrefInners.push.apply(hrefInners, filteredPages);
             uniqueValues = [...new Set(hrefInners)];
 
@@ -104,6 +104,7 @@ export const fetchUrls = async (data) => {
 
         console.log('Setting urls for the crawl session.', data.url);
 
+        // Check if Urls exist in DB or add them
         for (const el of uniqueValues) {
             const dbUrls = await crawlsRef.findAll({
                 where: {
@@ -206,16 +207,16 @@ export const puppetize = async ({page, data}) => {
 
         const crawlsRequests = await db.requests;
         // console.log(requests);
-        // for (let key of Object.keys(requests)) {
-        //     crawlsRequests.create({
-        //         interceptionId: requests[key].interceptionId,
-        //         url: requests[key].request.url,
-        //         pageUrl: data.url,
-        //         initialPriority: requests[key].request.initialPriority,
-        //         requestId: requests[key].requestId,
-        //         // hostOs: os.hostname()
-        //     });
-        // }
+        for (let key of Object.keys(requests)) {
+            crawlsRequests.create({
+                interceptionId: requests[key].interceptionId,
+                url: requests[key].request.url,
+                pageUrl: data.url,
+                initialPriority: requests[key].request.initialPriority,
+                requestId: requests[key].requestId,
+                // hostOs: os.hostname()
+            });
+        }
         console.log("Requests detected :", requests.length);
 
         console.log('Getting cookies for url:', data.url);
@@ -239,11 +240,6 @@ export const puppetize = async ({page, data}) => {
                 hostOs: os.hostname()
             });
         }
-        // console.log("Cookies detected :", cookies.length);
-        // collect all cookies (not shared between pages)
-        // Returns all browser cookies. Depending on the backend support, will return detailed cookie information in the cookies field.
-        // Doc: https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-getAllCookies
-        // const cookies = (await devtools.send('Network.getAllCookies')).cookies;
 
         // await db.requests.update({
         //     cookies: cookies,
