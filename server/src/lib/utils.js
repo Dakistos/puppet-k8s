@@ -195,6 +195,9 @@ export const puppetize = async ({page, data}) => {
 
         await autoScroll(page);
 
+        const all_browser_cookies = (await devtools.send('Network.getAllCookies')).cookies;
+        console.log(all_browser_cookies, "///", all_browser_cookies.length);
+
         console.log('Pending...', data.url);
 
         await page.waitFor(3000);
@@ -203,37 +206,40 @@ export const puppetize = async ({page, data}) => {
 
         const crawlsRequests = await db.requests;
         // console.log(requests);
-        for (let key of Object.keys(requests)) {
-            crawlsRequests.create({
-                interceptionId: requests[key].interceptionId,
-                url: requests[key].request.url,
-                pageUrl: data.url,
-                initialPriority: requests[key].request.initialPriority,
-                requestId: requests[key].requestId,
-                // hostOs: os.hostname()
-            });
-        }
+        // for (let key of Object.keys(requests)) {
+        //     crawlsRequests.create({
+        //         interceptionId: requests[key].interceptionId,
+        //         url: requests[key].request.url,
+        //         pageUrl: data.url,
+        //         initialPriority: requests[key].request.initialPriority,
+        //         requestId: requests[key].requestId,
+        //         // hostOs: os.hostname()
+        //     });
+        // }
         console.log("Requests detected :", requests.length);
 
         console.log('Getting cookies for url:', data.url);
 
+        cookies.push.apply(cookies, all_browser_cookies);
+        let allCookies = [...new Set(cookies.filter(cookieName => cookieName.name))];
+
         const crawlsCookies = await db.cookies;
         // console.log(cookies);
-        for (let key of Object.keys(cookies)) {
+        for (let key of Object.keys(allCookies)) {
             crawlsCookies.create({
-                domain: cookies[key].domain,
+                domain:allCookies[key].domain,
                 requestUrl: data.url,
-                expires: cookies[key].expires,
-                pageUrl: cookies[key].path,
-                name: cookies[key].name,
-                value: cookies[key].value,
-                secure: cookies[key].secure,
-                sameSite: cookies[key].sameSite,
-                requestId: cookies[key].requestId,
+                expires: allCookies[key].expires,
+                pageUrl: allCookies[key].path,
+                name: allCookies[key].name,
+                value: allCookies[key].value,
+                secure: allCookies[key].secure,
+                sameSite: allCookies[key].sameSite,
+                requestId: allCookies[key].requestId,
                 hostOs: os.hostname()
             });
         }
-        console.log("Cookies detected :", cookies.length);
+        // console.log("Cookies detected :", cookies.length);
         // collect all cookies (not shared between pages)
         // Returns all browser cookies. Depending on the backend support, will return detailed cookie information in the cookies field.
         // Doc: https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-getAllCookies

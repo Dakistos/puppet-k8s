@@ -26,7 +26,7 @@ async function createCluster() {
         // puppeteer: puppeteer,
         monitor: true,
         puppeteerOptions: {
-            headless: false,
+            headless: true,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -36,14 +36,14 @@ async function createCluster() {
     });
 
     // Event listener on task error.
-    cluster.on('taskerror', (err, data, willRetry) => {
-        if (willRetry) {
-            console.warn(
-                `Encountered an error while crawling ${data.doc.url}. ${err.message} [-] This job will be retried`);
-        } else {
-            console.error(`Failed to crawl ${data.doc.url}: ${err.message}`);
-        }
-    });
+    // cluster.on('taskerror', (err, data, willRetry) => {
+    //     if (willRetry) {
+    //         console.warn(
+    //             `Encountered an error while crawling ${data.doc.url}. ${err.message} [-] This job will be retried`);
+    //     } else {
+    //         console.error(`Failed to crawl ${data.doc.url}: ${err.message}`);
+    //     }
+    // });
 
     return cluster;
 }
